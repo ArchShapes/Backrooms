@@ -171,13 +171,13 @@
 <!-- MAIN MENU -->
 <div id="main-menu">
   <h1>BACKSITE</h1>
-  <p class="sub">something is already inside</p>
+  <p class="sub">collect all cores and find the exit</p>
   <button class="menu-btn" id="btn-new-game">NEW GAME</button>
   <button class="menu-btn" id="btn-load-game">LOAD GAME</button>
   <button class="menu-btn" id="btn-menu-settings">SETTINGS</button>
   <div style="margin-top:2.5em; font-size:0.7em; color:#5c5844; letter-spacing:0.08em; line-height:1.8em;">
     WASD / ARROWS — walk &nbsp;&nbsp;·&nbsp;&nbsp; MOUSE — look &nbsp;&nbsp;·&nbsp;&nbsp; SHIFT — run<br>
-    PRESS E — collect cores / interact &nbsp;&nbsp;·&nbsp;&nbsp; headphones recommended.
+    E — interact / collect / escape
   </div>
 </div>
 
@@ -214,8 +214,8 @@
 <div id="objectives-box">
   <h3>OBJECTIVES</h3>
   <ul>
-    <li id="obj-cores">▪ Find scattered cores (0/4).</li>
-    <li id="obj-door">▪ Unlock and enter the exit.</li>
+    <li id="obj-collect">▪ Collect cores: 0/5</li>
+    <li id="obj-door">▪ Find and unlock the exit door.</li>
   </ul>
 </div>
 
@@ -248,16 +248,15 @@
 
 <!-- ENDING SCREEN -->
 <div id="ending-screen">
-  <h2>YOU GOT OUT</h2>
-  <p>the halls tore open into static and you fell through.<br>you don't remember reaching a door. you're just... out.<br>it's still down there.</p>
-  <button id="btn-again">GO BACK IN</button>
+  <h2>YOU ESCAPED</h2>
+  <p>you collected all cores, unlocked the door, and stepped back out into reality.</p>
+  <button id="btn-again">PLAY AGAIN</button>
 </div>
 
 <!-- HIDDEN AUDIO ELEMENTS FOR AMBIENT TRACKS -->
 <audio id="amb-1" src="ambient1.mp3" preload="auto"></audio>
 <audio id="amb-2" src="ambient2.mp3" preload="auto"></audio>
 <audio id="amb-3" src="ambient3.mp3" preload="auto"></audio>
-<audio id="chase-audio" src="chase.mp3" preload="auto"></audio>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -375,7 +374,6 @@ function footstepClick(){
   osc.start(t); osc.stop(t+0.15);
 }
 
-/* Random Ambient Audio Loop Scheduler */
 const ambientAudios = [
   document.getElementById('amb-1'),
   document.getElementById('amb-2'),
@@ -418,7 +416,6 @@ function wallTexture(){
     ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
   }
 
-  // dark rust / stain streaks
   for(let i=0; i<220; i++){
     const x = Math.random()*4096, y = Math.random()*1200;
     const h = 400 + Math.random()*2200, w = 3 + Math.random()*10;
@@ -429,7 +426,6 @@ function wallTexture(){
     ctx.fillRect(x, y, w, h);
   }
 
-  // scratch marks
   ctx.strokeStyle = 'rgba(30,5,5,0.4)';
   for(let i=0;i<60;i++){
     const x = Math.random()*4096, y = Math.random()*4096;
@@ -468,7 +464,6 @@ function floorTexture(){
     ctx.fillRect(x, y, 4, 4);
   }
 
-  // dark smears
   for(let i=0;i<80;i++){
     const x=Math.random()*4096, y=Math.random()*4096, r=20+Math.random()*90;
     ctx.fillStyle = `rgba(20,3,3,${0.08+Math.random()*0.15})`;
@@ -492,7 +487,6 @@ function ceilTexture(){
     ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(4096, i); ctx.stroke();
   }
 
-  // damp dark patches
   for(let i=0;i<40;i++){
     const x=Math.random()*4096, y=Math.random()*4096, r=40+Math.random()*160;
     ctx.fillStyle = `rgba(0,0,0,${0.1+Math.random()*0.2})`;
@@ -540,7 +534,6 @@ function genMaze(){
     stack.push([pick.nx,pick.nz]);
   }
 
-  // --- BRAIDING: knock down extra walls so dead ends open into loops ---
   for(let x=0;x<GRID;x++){
     for(let z=0;z<GRID;z++){
       const cell = grid[x][z];
@@ -558,7 +551,6 @@ function genMaze(){
     }
   }
 
-  // --- WRONG HALLWAYS: carve straight corridors ---
   const straightRuns = 4;
   for(let r=0; r<straightRuns; r++){
     const horizontal = Math.random() < 0.5;
@@ -663,47 +655,94 @@ const levelGroup = new THREE.Group();
 scene.add(levelGroup);
 
 /* =========================================================================
-   CORE COLLECTION & EXIT GATE MECHANIC STATE
+   COLLECTIBLES & EXIT DOOR STATE
    ========================================================================= */
-let totalCores = 4;
-let collectedCores = 0;
-let coreObjects = [];
+const TOTAL_COLLECTIBLES = 5;
+let collectedCount = 0;
+let collectibleMeshes = [];
 let exitDoorMesh = null;
-const startCell = {x:0, z:0};
-
-const coreGeo = new THREE.OctahedronGeometry(0.45);
-const coreMat = new THREE.MeshStandardMaterial({
-  color: 0xff3333,
-  emissive: 0xff0000,
-  emissiveIntensity: 0.8,
-  roughness: 0.2,
-  metalness: 0.8
-});
-
-const doorGeo = new THREE.BoxGeometry(2.2, 4.5, 0.3);
-const lockedDoorMat = new THREE.MeshStandardMaterial({ color: 0x331111, roughness: 0.9 });
-const unlockedDoorMat = new THREE.MeshStandardMaterial({
-  color: 0xffffff,
-  emissive: 0xffffff,
-  emissiveIntensity: 1.5,
-  roughness: 0.1
-});
+let exitDoorPosition = new THREE.Vector3();
 
 function updateObjectivesUI(){
-  const objCores = document.getElementById('obj-cores');
+  const objCollect = document.getElementById('obj-collect');
   const objDoor = document.getElementById('obj-door');
-  if(objCores && objDoor){
-    if(collectedCores < totalCores){
-      objCores.innerHTML = `▪ Find scattered cores (${collectedCores}/${totalCores}).`;
-      objCores.classList.remove('completed');
-      objDoor.innerHTML = `▪ Unlock and enter the exit.`;
-      objDoor.classList.remove('completed');
+  if(objCollect){
+    objCollect.innerText = `▪ Collect cores: ${collectedCount}/${TOTAL_COLLECTIBLES}`;
+    if(collectedCount >= TOTAL_COLLECTIBLES) objCollect.classList.add('completed');
+    else objCollect.classList.remove('completed');
+  }
+  if(objDoor){
+    if(collectedCount >= TOTAL_COLLECTIBLES){
+      objDoor.innerText = `▪ Press E at the exit door to escape.`;
+      objDoor.style.color = '#c9302c';
     } else {
-      objCores.innerHTML = `▪ Find scattered cores (${totalCores}/${totalCores}) - <span style="color:#6aff6a">COMPLETE</span>`;
-      objCores.classList.add('completed');
-      objDoor.innerHTML = `▪ Reach the glowing exit door!`;
+      objDoor.innerText = `▪ Find and unlock the exit door.`;
+      objDoor.style.color = '#a89c8a';
     }
   }
+}
+
+function spawnCollectiblesAndDoor(){
+  collectibleMeshes.forEach(m => scene.remove(m.mesh));
+  collectibleMeshes = [];
+  if(exitDoorMesh) scene.remove(exitDoorMesh);
+
+  collectedCount = 0;
+
+  const candidateCells = [];
+  for(let x=0; x<GRID; x++){
+    for(let z=0; z<GRID; z++){
+      if(x === 0 && z === 0) continue;
+      candidateCells.push({x, z});
+    }
+  }
+  candidateCells.sort(() => Math.random() - 0.5);
+
+  // Improved core model: glowing dual-layer icosahedron / crystal core
+  const coreGroupTemplate = new THREE.Group();
+  const innerGeo = new THREE.IcosahedronGeometry(0.35, 0);
+  const innerMat = new THREE.MeshStandardMaterial({ 
+    color: 0xff3333, 
+    emissive: 0xaa1111, 
+    roughness: 0.2, 
+    metalness: 0.8 
+  });
+  const innerMesh = new THREE.Mesh(innerGeo, innerMat);
+  coreGroupTemplate.add(innerMesh);
+
+  const outerGeo = new THREE.IcosahedronGeometry(0.55, 1);
+  const outerMat = new THREE.MeshBasicMaterial({ 
+    color: 0xff6666, 
+    wireframe: true, 
+    transparent: true, 
+    opacity: 0.4 
+  });
+  const outerMesh = new THREE.Mesh(outerGeo, outerMat);
+  coreGroupTemplate.add(outerMesh);
+
+  // Add small point light to each core for high atmosphere
+  const coreLight = new THREE.PointLight(0xff3333, 1.2, 4);
+  coreLight.position.set(0, 0, 0);
+  coreGroupTemplate.add(coreLight);
+
+  for(let i=0; i<TOTAL_COLLECTIBLES && i<candidateCells.length; i++){
+    const cell = candidateCells[i];
+    const coreInstance = coreGroupTemplate.clone();
+    coreInstance.position.set(cell.x * CELL + (Math.random()-0.5)*2, 1.2, cell.z * CELL + (Math.random()-0.5)*2);
+    scene.add(coreInstance);
+    collectibleMeshes.push({ group: coreInstance, mesh: coreInstance, collected: false });
+  }
+
+  const doorCell = candidateCells[candidateCells.length - 1];
+  const doorGeo = new THREE.BoxGeometry(2.4, 4.5, 0.4);
+  const doorMat = new THREE.MeshStandardMaterial({ color: 0x3a1c1c, roughness: 0.7 });
+  exitDoorMesh = new THREE.Mesh(doorGeo, doorMat);
+  exitDoorPosition.set(doorCell.x * CELL, 2.25, doorCell.z * CELL);
+  exitDoorMesh.position.copy(exitDoorPosition);
+  exitDoorMesh.castShadow = true;
+  scene.add(exitDoorMesh);
+
+  updateObjectivesUI();
 }
 
 function addWall(cx, cz, dir){
@@ -723,13 +762,7 @@ function addWall(cx, cz, dir){
 function buildLevel(){
   while(levelGroup.children.length) levelGroup.remove(levelGroup.children[0]);
   wallMeshes = [];
-  coreObjects.forEach(c => scene.remove(c.mesh));
-  coreObjects = [];
-  if(exitDoorMesh){ scene.remove(exitDoorMesh); exitDoorMesh = null; }
-  
-  collectedCores = 0;
   genMaze();
-
   for(let x=0;x<GRID;x++){
     for(let z=0;z<GRID;z++){
       const cell = grid[x][z];
@@ -739,30 +772,7 @@ function buildLevel(){
       if(z===GRID-1 && cell.S) addWall(x,z,'S');
     }
   }
-
-  // Spawn Cores randomly in valid maze positions far from start
-  let spawned = 0;
-  while(spawned < totalCores){
-    let rx = Math.floor(Math.random() * GRID);
-    let rz = Math.floor(Math.random() * GRID);
-    if(rx === 0 && rz === 0) continue; // Don't spawn on player start
-    if(!coreObjects.some(c => c.gx === rx && c.gz === rz)){
-      const mesh = new THREE.Mesh(coreGeo, coreMat.clone());
-      mesh.position.set(rx * CELL, 1.5, rz * CELL);
-      scene.add(mesh);
-      coreObjects.push({ mesh: mesh, gx: rx, gz: rz, collected: false });
-      spawned++;
-    }
-  }
-
-  // Spawn Exit Door at far corner from start
-  const doorX = (GRID - 1) * CELL;
-  const doorZ = (GRID - 1) * CELL;
-  exitDoorMesh = new THREE.Mesh(doorGeo, lockedDoorMat);
-  exitDoorMesh.position.set(doorX, 2.25, doorZ - CELL/2);
-  scene.add(exitDoorMesh);
-
-  updateObjectivesUI();
+  spawnCollectiblesAndDoor();
 }
 buildLevel();
 
@@ -796,7 +806,6 @@ const postMaterial = new THREE.ShaderMaterial({
     void main(){
       vec4 col = texture2D(tDiffuse, vUv);
       
-      // Bloom simulation
       vec4 sampleSum = vec4(0.0);
       for(float x = -2.0; x <= 2.0; x += 1.0){
         for(float y = -2.0; y <= 2.0; y += 1.0){
@@ -806,11 +815,9 @@ const postMaterial = new THREE.ShaderMaterial({
       vec4 blur = sampleSum / 25.0;
       col.rgb += blur.rgb * 0.25;
 
-      // Vignette
       float vig = smoothstep(0.85, 0.15, length(vUv - 0.5));
       col.rgb *= mix(0.02, 1.0, vig);
 
-      // Subtle film grain
       float grain = (rand(vUv * uTime) - 0.5) * 0.06;
       col.rgb += grain;
 
@@ -827,8 +834,9 @@ function resizePost(){
 resizePost();
 
 /* =========================================================================
-   CONTROLS & PLAYER & INTERACTION LOGIC
+   CONTROLS & PLAYER
    ========================================================================= */
+const startCell = {x:0, z:0};
 camera.position.set(startCell.x*CELL, EYE_HEIGHT, startCell.z*CELL);
 let yaw = Math.PI*0.25, pitch = 0;
 const keys = {};
@@ -911,62 +919,7 @@ function updatePlayer(dt){
   } else {
     camera.position.y += (EYE_HEIGHT - camera.position.y)*0.1;
   }
-
-  // Check interaction prompts for cores or exit door
-  checkInteractions();
 }
-
-let activeInteractable = null;
-const interactionPromptEl = document.getElementById('interaction-prompt');
-
-function checkInteractions(){
-  activeInteractable = null;
-  interactionPromptEl.style.display = 'none';
-
-  // Check uncollected cores nearby
-  for(let i=0; i<coreObjects.length; i++){
-    const c = coreObjects[i];
-    if(!c.collected){
-      const dist = camera.position.distanceTo(c.mesh.position);
-      if(dist < 2.5){
-        activeInteractable = { type: 'core', index: i };
-        interactionPromptEl.innerText = 'PRESS [E] TO ABSORB CORE';
-        interactionPromptEl.style.display = 'block';
-        return;
-      }
-    }
-  }
-
-  // Check exit door if all cores are collected
-  if(exitDoorMesh && collectedCores >= totalCores){
-    const dist = camera.position.distanceTo(exitDoorMesh.position);
-    if(dist < 3.0){
-      activeInteractable = { type: 'exit' };
-      interactionPromptEl.innerText = 'PRESS [E] TO ENTER EXIT';
-      interactionPromptEl.style.display = 'block';
-      return;
-    }
-  }
-}
-
-document.addEventListener('keydown', e=>{
-  if(e.code === 'KeyE' && gameStarted && !gamePaused && !gameEnded && activeInteractable){
-    if(activeInteractable.type === 'core'){
-      const core = coreObjects[activeInteractable.index];
-      core.collected = true;
-      scene.remove(core.mesh);
-      collectedCores++;
-      updateObjectivesUI();
-      interactionPromptEl.style.display = 'none';
-      if(collectedCores >= totalCores && exitDoorMesh){
-        exitDoorMesh.material = unlockedDoorMat;
-        showAlert('All cores gathered. The exit has unlocked!');
-      }
-    } else if(activeInteractable.type === 'exit'){
-      triggerEnding();
-    }
-  }
-});
 
 /* =========================================================================
    UI & GAME STATES
@@ -978,6 +931,7 @@ const confirmModalEl = document.getElementById('confirm-modal');
 const objectivesBoxEl = document.getElementById('objectives-box');
 const pauseHintEl = document.getElementById('pause-hint');
 const crosshairEl = document.getElementById('crosshair');
+const interactionPromptEl = document.getElementById('interaction-prompt');
 
 let gameStarted = false, gamePaused = false, gameEnded = false, openedFromPause = false;
 
@@ -1021,7 +975,7 @@ function closePauseMenu(){
 document.getElementById('btn-resume').addEventListener('click', closePauseMenu);
 
 document.getElementById('btn-save').addEventListener('click', ()=>{
-  const saveData = { x: camera.position.x, y: camera.position.y, z: camera.position.z, yaw: yaw, pitch: pitch, collectedCores: collectedCores };
+  const saveData = { x: camera.position.x, y: camera.position.y, z: camera.position.z, yaw: yaw, pitch: pitch, collected: collectedCount };
   localStorage.setItem('backsite_save', JSON.stringify(saveData));
   showAlert('Game Saved Successfully.');
 });
@@ -1036,7 +990,6 @@ document.getElementById('confirm-yes').addEventListener('click', ()=>{
   camera.position.set(startCell.x*CELL, EYE_HEIGHT, startCell.z*CELL);
   yaw = Math.PI*0.25; pitch = 0;
   closePauseMenu();
-  startSequence();
 });
 
 document.getElementById('confirm-no').addEventListener('click', ()=>{
@@ -1050,10 +1003,7 @@ document.getElementById('btn-main-menu').addEventListener('click', ()=>{
   objectivesBoxEl.style.display = 'none';
   pauseHintEl.style.display = 'none';
   crosshairEl.style.display = 'none';
-  document.getElementById('interaction-prompt').style.display = 'none';
-  glitchOverlay.style.display = 'none';
-  chaseAudioEl.pause();
-  sequencePhase = 'idle';
+  interactionPromptEl.style.display = 'none';
   mainMenuEl.style.display = 'flex';
   document.body.classList.remove('cursor-hidden');
   if(document.pointerLockElement === canvas) document.exitPointerLock();
@@ -1088,7 +1038,6 @@ document.getElementById('btn-new-game').addEventListener('click', ()=>{
   yaw = Math.PI*0.25; pitch = 0;
   document.body.classList.add('cursor-hidden');
   requestLook();
-  startSequence();
 });
 
 document.getElementById('btn-load-game').addEventListener('click', ()=>{
@@ -1107,12 +1056,66 @@ document.getElementById('btn-load-game').addEventListener('click', ()=>{
     crosshairEl.style.display = 'block';
     camera.position.set(data.x, data.y, data.z);
     yaw = data.yaw; pitch = data.pitch;
-    if(data.collectedCores !== undefined) collectedCores = data.collectedCores;
+    collectedCount = data.collected || 0;
+    updateObjectivesUI();
     document.body.classList.add('cursor-hidden');
     requestLook();
-    startSequence();
   } catch(e) { showAlert('Failed to load save data.'); }
 });
+
+/* =========================================================================
+   INTERACTION LOGIC (COLLECTING & ESCAPING WITH E)
+   ========================================================================= */
+document.addEventListener('keydown', e => {
+  if((e.code === 'KeyE' || e.key === 'e' || e.key === 'E') && gameStarted && !gamePaused && !gameEnded){
+    for(let i=0; i<collectibleMeshes.length; i++){
+      let item = collectibleMeshes[i];
+      if(!item.collected && camera.position.distanceTo(item.mesh.position) < 2.5){
+        item.collected = true;
+        item.mesh.visible = false;
+        collectedCount++;
+        updateObjectivesUI();
+        return;
+      }
+    }
+
+    if(exitDoorMesh && camera.position.distanceTo(exitDoorPosition) < 3.0){
+      if(collectedCount >= TOTAL_COLLECTIBLES){
+        triggerEnding();
+      } else {
+        showAlert(`The door is locked. You need all ${TOTAL_COLLECTIBLES} cores! (${collectedCount}/${TOTAL_COLLECTIBLES})`);
+      }
+    }
+  }
+});
+
+function updateInteractions(){
+  if(!gameStarted || gamePaused || gameEnded) return;
+  let promptText = '';
+
+  for(let i=0; i<collectibleMeshes.length; i++){
+    let item = collectibleMeshes[i];
+    if(!item.collected && camera.position.distanceTo(item.mesh.position) < 2.5){
+      promptText = 'Press E to Collect Core';
+      break;
+    }
+  }
+
+  if(!promptText && exitDoorMesh && camera.position.distanceTo(exitDoorPosition) < 3.0){
+    if(collectedCount >= TOTAL_COLLECTIBLES){
+      promptText = 'Press E to Escape';
+    } else {
+      promptText = `Locked (${collectedCount}/${TOTAL_COLLECTIBLES} cores)`;
+    }
+  }
+
+  if(promptText){
+    interactionPromptEl.innerText = promptText;
+    interactionPromptEl.style.display = 'block';
+  } else {
+    interactionPromptEl.style.display = 'none';
+  }
+}
 
 /* =========================================================================
    ENDING & LOOP
@@ -1124,13 +1127,13 @@ let t = 0;
 function triggerEnding(){
   gameEnded = true;
   gamePaused = true;
-  sequencePhase = 'idle';
   objectivesBoxEl.style.display = 'none';
   pauseHintEl.style.display = 'none';
   crosshairEl.style.display = 'none';
-  document.getElementById('interaction-prompt').style.display = 'none';
+  interactionPromptEl.style.display = 'none';
   document.body.classList.remove('cursor-hidden');
   if(document.pointerLockElement === canvas) document.exitPointerLock();
+  
   document.getElementById('flash').style.opacity = 0.9;
   setTimeout(()=>{
     document.getElementById('flash').style.opacity = 0;
@@ -1150,182 +1153,25 @@ document.getElementById('btn-again').addEventListener('click', ()=>{
   crosshairEl.style.display = 'block';
   document.body.classList.add('cursor-hidden');
   requestLook();
-  startSequence();
 });
-
-/* =========================================================================
-   DREAD SEQUENCE & HOVER ANIMATION FOR CORES
-   ========================================================================= */
-const EXPLORE_DURATION = 38;
-const CHASE_DURATION = 12;
-let sequenceTimer = 0;
-let sequencePhase = 'idle';
-const glitchOverlay = document.getElementById('glitch-overlay');
-const chaseAudioEl = document.getElementById('chase-audio');
-let flashlightBaseIntensity = flashlight.intensity;
-
-const shadowFigure = new THREE.Group();
-const shadowMat = new THREE.MeshBasicMaterial({ color:0x000000, transparent:true, opacity:0.95 });
-const shadowBody = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 2.0, 8), shadowMat);
-shadowBody.position.y = 1.0;
-const shadowHead = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), shadowMat);
-shadowHead.position.y = 2.15;
-shadowFigure.add(shadowBody, shadowHead);
-shadowFigure.visible = false;
-scene.add(shadowFigure);
-
-function spawnShadowFigure(){
-  const dist = 6 + Math.random()*8;
-  const fwdX = -Math.sin(yaw), fwdZ = -Math.cos(yaw);
-  shadowFigure.position.set(
-    camera.position.x + fwdX*dist + (Math.random()-0.5)*1.5,
-    1.7,
-    camera.position.z + fwdZ*dist + (Math.random()-0.5)*1.5
-  );
-  shadowFigure.visible = true;
-  setTimeout(()=>{ shadowFigure.visible = false; }, 350 + Math.random()*250);
-}
-
-function whisperSound(){
-  if(!actx) return;
-  const dur = 0.6 + Math.random()*0.5;
-  const src = actx.createBufferSource();
-  src.buffer = makeNoiseBuffer(dur);
-  const bp = actx.createBiquadFilter();
-  bp.type = 'bandpass'; bp.frequency.value = 900 + Math.random()*600; bp.Q.value = 3;
-  const g = actx.createGain();
-  const now = actx.currentTime;
-  g.gain.setValueAtTime(0.0001, now);
-  g.gain.linearRampToValueAtTime(0.12, now+0.15);
-  g.gain.linearRampToValueAtTime(0.0001, now+dur);
-  src.connect(bp); bp.connect(g); g.connect(masterAudioGain);
-  src.start(now); src.stop(now+dur);
-}
-
-function distantThud(){
-  if(!actx) return;
-  const osc = actx.createOscillator();
-  osc.type = 'sine'; osc.frequency.value = 45;
-  const g = actx.createGain();
-  const now = actx.currentTime;
-  g.gain.setValueAtTime(0.25, now);
-  g.gain.exponentialRampToValueAtTime(0.0001, now+0.9);
-  osc.connect(g); g.connect(masterAudioGain);
-  osc.start(now); osc.stop(now+0.9);
-}
-
-function lightStutter(){
-  const original = flashlight.intensity;
-  let flickers = 0;
-  const iv = setInterval(()=>{
-    flickers++;
-    flashlight.intensity = Math.random() > 0.5 ? 0 : original * (0.4+Math.random()*0.8);
-    if(flickers > 5){ clearInterval(iv); flashlight.intensity = original; }
-  }, 70);
-}
-
-let weirdEventTimes = [];
-function scheduleWeirdEvents(){
-  weirdEventTimes = [];
-  let tcursor = 4;
-  while(tcursor < EXPLORE_DURATION - 3){
-    tcursor += 4 + Math.random()*4;
-    if(tcursor < EXPLORE_DURATION - 3){
-      weirdEventTimes.push({ time: tcursor, fired: false, kind: Math.floor(Math.random()*3) });
-    }
-  }
-}
-
-function fireWeirdEvent(kind){
-  if(kind === 0) spawnShadowFigure();
-  else if(kind === 1){ whisperSound(); }
-  else { distantThud(); lightStutter(); }
-}
-
-function startSequence(){
-  sequenceTimer = 0;
-  sequencePhase = 'explore';
-  glitchOverlay.style.display = 'none';
-  shadowFigure.visible = false;
-  flashlight.intensity = flashlightBaseIntensity;
-  scheduleWeirdEvents();
-}
-
-function beginChase(){
-  sequencePhase = 'chase';
-  sequenceTimer = 0;
-  shadowFigure.visible = false;
-  if(actx){
-    chaseAudioEl.currentTime = 0;
-    chaseAudioEl.volume = gameSettings.volume;
-    chaseAudioEl.play().catch(e => console.log('chase.mp3 missing/blocked:', e));
-  }
-}
-
-function beginGlitchEscape(){
-  sequencePhase = 'glitching';
-  sequenceTimer = 0;
-  chaseAudioEl.pause();
-  glitchOverlay.style.display = 'block';
-  let glitches = 0;
-  const glitchInterval = setInterval(()=>{
-    glitches++;
-    glitchOverlay.style.opacity = Math.random();
-    glitchOverlay.style.transform = `translate(${(Math.random()-0.5)*30}px, ${(Math.random()-0.5)*30}px)`;
-    if(glitches > 14){
-      clearInterval(glitchInterval);
-      glitchOverlay.style.display = 'none';
-      triggerEnding();
-    }
-  }, 60);
-}
-
-function updateSequence(dt){
-  if(sequencePhase === 'idle') return;
-  sequenceTimer += dt;
-
-  if(sequencePhase === 'explore'){
-    for(const ev of weirdEventTimes){
-      if(!ev.fired && sequenceTimer >= ev.time){
-        ev.fired = true;
-        fireWeirdEvent(ev.kind);
-      }
-    }
-    if(sequenceTimer >= EXPLORE_DURATION){
-      beginChase();
-    }
-    return;
-  }
-
-  if(sequencePhase === 'chase'){
-    const flicker = Math.random();
-    flashlight.intensity = flicker > 0.75 ? 0 : flashlightBaseIntensity * (0.3 + Math.random()*1.4);
-    scene.fog.density = gameSettings.fogDensity * (1.4 + Math.random()*0.8);
-    if(Math.random() > 0.9) document.getElementById('flash').style.opacity = Math.random()*0.15;
-    else document.getElementById('flash').style.opacity = 0;
-
-    if(sequenceTimer >= CHASE_DURATION){
-      beginGlitchEscape();
-    }
-  }
-}
 
 function animate(){
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.033);
   t += dt;
 
-  // Animate floating uncollected cores
-  coreObjects.forEach(c => {
-    if(!c.collected){
-      c.mesh.rotation.y += dt * 1.5;
-      c.mesh.position.y = 1.5 + Math.sin(t * 3 + c.gx) * 0.15;
+  // Animate/rotate core models nicely
+  collectibleMeshes.forEach(item => {
+    if(!item.collected && item.mesh){
+      item.mesh.rotation.x += dt * 1.2;
+      item.mesh.rotation.y += dt * 1.5;
+      item.mesh.position.y = 1.2 + Math.sin(t * 3 + item.mesh.position.x) * 0.15;
     }
   });
 
   if(gameStarted && !gamePaused && !gameEnded){
     updatePlayer(dt);
-    updateSequence(dt);
+    updateInteractions();
   }
   postMaterial.uniforms.uTime.value = t;
   renderer.setRenderTarget(renderTarget);
