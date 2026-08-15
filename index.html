@@ -86,6 +86,18 @@
     text-shadow:0 0 8px #000; transition:opacity 2s ease; pointer-events:none; width:90%;
   }
 
+  /* ---- mobile movement pad ---- */
+  #mobile-pad {
+    position: fixed; bottom: 6%; left: 6%; width: 120px; height: 120px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50%; z-index: 25; display: none; touch-action: none;
+    align-items: center; justify-content: center;
+  }
+  #mobile-stick {
+    width: 44px; height: 44px; background: rgba(232,223,184,0.35);
+    border-radius: 50%; position: absolute; pointer-events: none;
+  }
+
   /* ---- BSOD ---- */
   #bsod {
     position:fixed; inset:0; z-index:200; background:#0000AA; color:#fff;
@@ -119,6 +131,7 @@
 <div id="flash"></div>
 <div id="crosshair"></div>
 <div id="hud-msg"></div>
+<div id="mobile-pad"><div id="mobile-stick"></div></div>
 <div id="pause-hint" style="opacity:0;">move mouse to turn</div>
 
 <div id="pause-menu">
@@ -540,7 +553,7 @@ function resizePost(){
 let glitchLevel = 0;
 
 /* =========================================================================
-   PLAYER / CONTROLS
+   PLAYER / CONTROLS (Updated Sensitivity & Mobile Joystick)
    ========================================================================= */
 const startCell = {x:0, z:0};
 camera.position.set(startCell.x*CELL, EYE_HEIGHT, startCell.z*CELL);
@@ -550,8 +563,11 @@ const keys = {};
 document.addEventListener('keydown', e=>{ keys[e.code]=true; });
 document.addEventListener('keyup', e=>{ keys[e.code]=false; });
 
+const isMobile = /Mobi|Android/i.test(navigator.userAgent) || ('ontouchstart' in window);
+// PC: +20% (0.00384), Mobile: +50% (0.0048)
+const LOOK_SENS = isMobile ? 0.0048 : 0.00384; 
+
 let pointerLocked = false;
-const LOOK_SENS = 0.0032;
 
 function requestLook(){
   if(!gameStarted) return;
@@ -592,6 +608,66 @@ canvas.addEventListener('touchmove', e=>{
 }, {passive:false});
 canvas.addEventListener('touchend', ()=>{ lastTouchX = null; lastTouchY = null; });
 
+/* =========================================================================
+   MOBILE VIRTUAL THUMBSTICK LOGIC
+   ========================================================================= */
+const mobilePad = document.getElementById('mobile-pad');
+const mobileStick = document.getElementById('mobile-stick');
+let touchMoveVec = { x: 0, z: 0 };
+let stickTouchId = null;
+
+if (isMobile) {
+  mobilePad.style.display = 'flex';
+}
+
+mobilePad.addEventListener('touchstart', e => {
+  if (stickTouchId === null) {
+    const t = e.changedTouches[0];
+    stickTouchId = t.identifier;
+    updateStick(t);
+  }
+}, {passive: true});
+
+mobilePad.addEventListener('touchmove', e => {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const t = e.changedTouches[i];
+    if (t.identifier === stickTouchId) {
+      updateStick(t);
+    }
+  }
+  e.preventDefault();
+}, {passive: false});
+
+function endStick(e) {
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    if (e.changedTouches[i].identifier === stickTouchId) {
+      stickTouchId = null;
+      touchMoveVec = { x: 0, z: 0 };
+      mobileStick.style.transform = `translate(0px, 0px)`;
+    }
+  }
+}
+mobilePad.addEventListener('touchend', endStick);
+mobilePad.addEventListener('touchcancel', endStick);
+
+function updateStick(t) {
+  const rect = mobilePad.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  let dx = t.clientX - centerX;
+  let dz = t.clientY - centerY;
+  const dist = Math.hypot(dx, dz);
+  const maxRadius = 45;
+
+  if (dist > maxRadius) {
+    dx = (dx / dist) * maxRadius;
+    dz = (dz / dist) * maxRadius;
+  }
+
+  mobileStick.style.transform = `translate(${dx}px, ${dz}px)`;
+  touchMoveVec = { x: dx / maxRadius, z: dz / maxRadius };
+}
+
 const PLAYER_RADIUS = 0.45;
 function tryMove(nx, nz){
   const box = new THREE.Box3(
@@ -623,6 +699,10 @@ function updatePlayer(dt){
   if(keys['KeyS']||keys['ArrowDown']){ dx -= fwdX; dz -= fwdZ; }
   if(keys['KeyD']||keys['ArrowRight']){ dx += rightX; dz += rightZ; }
   if(keys['KeyA']||keys['ArrowLeft']){ dx -= rightX; dz -= rightZ; }
+
+  // Integrate mobile virtual joystick movement vector
+  dx += fwdX * (-touchMoveVec.z) + rightX * touchMoveVec.x;
+  dz += fwdZ * (-touchMoveVec.z) + rightZ * touchMoveVec.x;
 
   const len = Math.hypot(dx,dz);
   moving = len > 0.001;
