@@ -177,7 +177,7 @@
   <button class="menu-btn" id="btn-menu-settings">SETTINGS</button>
   <div style="margin-top:2.5em; font-size:0.7em; color:#5c5844; letter-spacing:0.08em; line-height:1.8em;">
     WASD / ARROWS — walk &nbsp;&nbsp;·&nbsp;&nbsp; MOUSE — look &nbsp;&nbsp;·&nbsp;&nbsp; SHIFT — run<br>
-    headphones recommended.
+    PRESS E — collect cores / interact &nbsp;&nbsp;·&nbsp;&nbsp; headphones recommended.
   </div>
 </div>
 
@@ -214,7 +214,8 @@
 <div id="objectives-box">
   <h3>OBJECTIVES</h3>
   <ul>
-    <li id="obj-door">▪ Survive.</li>
+    <li id="obj-cores">▪ Find scattered cores (0/4).</li>
+    <li id="obj-door">▪ Unlock and enter the exit.</li>
   </ul>
 </div>
 
@@ -539,8 +540,7 @@ function genMaze(){
     stack.push([pick.nx,pick.nz]);
   }
 
-  // --- BRAIDING: knock down extra walls so dead ends open into loops,
-  // making the layout wander and double back on itself instead of a clean tree ---
+  // --- BRAIDING: knock down extra walls so dead ends open into loops ---
   for(let x=0;x<GRID;x++){
     for(let z=0;z<GRID;z++){
       const cell = grid[x][z];
@@ -558,8 +558,7 @@ function genMaze(){
     }
   }
 
-  // --- WRONG HALLWAYS: carve a handful of long, unnaturally straight
-  // corridors through the maze — the kind of geometry that shouldn't exist ---
+  // --- WRONG HALLWAYS: carve straight corridors ---
   const straightRuns = 4;
   for(let r=0; r<straightRuns; r++){
     const horizontal = Math.random() < 0.5;
@@ -664,12 +663,46 @@ const levelGroup = new THREE.Group();
 scene.add(levelGroup);
 
 /* =========================================================================
-   SURVIVAL LOOP STATE (no door — timed dread sequence)
+   CORE COLLECTION & EXIT GATE MECHANIC STATE
    ========================================================================= */
+let totalCores = 4;
+let collectedCores = 0;
+let coreObjects = [];
+let exitDoorMesh = null;
+const startCell = {x:0, z:0};
+
+const coreGeo = new THREE.OctahedronGeometry(0.45);
+const coreMat = new THREE.MeshStandardMaterial({
+  color: 0xff3333,
+  emissive: 0xff0000,
+  emissiveIntensity: 0.8,
+  roughness: 0.2,
+  metalness: 0.8
+});
+
+const doorGeo = new THREE.BoxGeometry(2.2, 4.5, 0.3);
+const lockedDoorMat = new THREE.MeshStandardMaterial({ color: 0x331111, roughness: 0.9 });
+const unlockedDoorMat = new THREE.MeshStandardMaterial({
+  color: 0xffffff,
+  emissive: 0xffffff,
+  emissiveIntensity: 1.5,
+  roughness: 0.1
+});
+
 function updateObjectivesUI(){
+  const objCores = document.getElementById('obj-cores');
   const objDoor = document.getElementById('obj-door');
-  if(objDoor){
-    objDoor.innerText = `▪ Survive.`;
+  if(objCores && objDoor){
+    if(collectedCores < totalCores){
+      objCores.innerHTML = `▪ Find scattered cores (${collectedCores}/${totalCores}).`;
+      objCores.classList.remove('completed');
+      objDoor.innerHTML = `▪ Unlock and enter the exit.`;
+      objDoor.classList.remove('completed');
+    } else {
+      objCores.innerHTML = `▪ Find scattered cores (${totalCores}/${totalCores}) - <span style="color:#6aff6a">COMPLETE</span>`;
+      objCores.classList.add('completed');
+      objDoor.innerHTML = `▪ Reach the glowing exit door!`;
+    }
   }
 }
 
@@ -690,7 +723,13 @@ function addWall(cx, cz, dir){
 function buildLevel(){
   while(levelGroup.children.length) levelGroup.remove(levelGroup.children[0]);
   wallMeshes = [];
+  coreObjects.forEach(c => scene.remove(c.mesh));
+  coreObjects = [];
+  if(exitDoorMesh){ scene.remove(exitDoorMesh); exitDoorMesh = null; }
+  
+  collectedCores = 0;
   genMaze();
+
   for(let x=0;x<GRID;x++){
     for(let z=0;z<GRID;z++){
       const cell = grid[x][z];
@@ -700,6 +739,29 @@ function buildLevel(){
       if(z===GRID-1 && cell.S) addWall(x,z,'S');
     }
   }
+
+  // Spawn Cores randomly in valid maze positions far from start
+  let spawned = 0;
+  while(spawned < totalCores){
+    let rx = Math.floor(Math.random() * GRID);
+    let rz = Math.floor(Math.random() * GRID);
+    if(rx === 0 && rz === 0) continue; // Don't spawn on player start
+    if(!coreObjects.some(c => c.gx === rx && c.gz === rz)){
+      const mesh = new THREE.Mesh(coreGeo, coreMat.clone());
+      mesh.position.set(rx * CELL, 1.5, rz * CELL);
+      scene.add(mesh);
+      coreObjects.push({ mesh: mesh, gx: rx, gz: rz, collected: false });
+      spawned++;
+    }
+  }
+
+  // Spawn Exit Door at far corner from start
+  const doorX = (GRID - 1) * CELL;
+  const doorZ = (GRID - 1) * CELL;
+  exitDoorMesh = new THREE.Mesh(doorGeo, lockedDoorMat);
+  exitDoorMesh.position.set(doorX, 2.25, doorZ - CELL/2);
+  scene.add(exitDoorMesh);
+
   updateObjectivesUI();
 }
 buildLevel();
@@ -734,7 +796,7 @@ const postMaterial = new THREE.ShaderMaterial({
     void main(){
       vec4 col = texture2D(tDiffuse, vUv);
       
-      // High quality bloom simulation for white glowing door
+      // Bloom simulation
       vec4 sampleSum = vec4(0.0);
       for(float x = -2.0; x <= 2.0; x += 1.0){
         for(float y = -2.0; y <= 2.0; y += 1.0){
@@ -765,9 +827,8 @@ function resizePost(){
 resizePost();
 
 /* =========================================================================
-   CONTROLS & PLAYER
+   CONTROLS & PLAYER & INTERACTION LOGIC
    ========================================================================= */
-const startCell = {x:0, z:0};
 camera.position.set(startCell.x*CELL, EYE_HEIGHT, startCell.z*CELL);
 let yaw = Math.PI*0.25, pitch = 0;
 const keys = {};
@@ -832,14 +893,12 @@ function updatePlayer(dt){
   if(moving){ dx/=len; dz/=len; }
 
   const moveX = dx*speed*dt, moveZ = dz*speed*dt;
-  // Sub-step collision to prevent clipping through thin walls
   const steps = Math.max(1, Math.ceil(Math.hypot(moveX, moveZ) / 0.15));
   const stepX = moveX / steps, stepZ = moveZ / steps;
   for(let s = 0; s < steps; s++){
     if(tryMove(camera.position.x + stepX, camera.position.z)) camera.position.x += stepX;
     if(tryMove(camera.position.x, camera.position.z + stepZ)) camera.position.z += stepZ;
   }
-  // Clamp to maze bounds
   const margin = PLAYER_RADIUS + 0.15;
   camera.position.x = Math.max(margin, Math.min(worldSize - CELL/2 - margin, camera.position.x));
   camera.position.z = Math.max(margin, Math.min(worldSize - CELL/2 - margin, camera.position.z));
@@ -853,7 +912,61 @@ function updatePlayer(dt){
     camera.position.y += (EYE_HEIGHT - camera.position.y)*0.1;
   }
 
+  // Check interaction prompts for cores or exit door
+  checkInteractions();
 }
+
+let activeInteractable = null;
+const interactionPromptEl = document.getElementById('interaction-prompt');
+
+function checkInteractions(){
+  activeInteractable = null;
+  interactionPromptEl.style.display = 'none';
+
+  // Check uncollected cores nearby
+  for(let i=0; i<coreObjects.length; i++){
+    const c = coreObjects[i];
+    if(!c.collected){
+      const dist = camera.position.distanceTo(c.mesh.position);
+      if(dist < 2.5){
+        activeInteractable = { type: 'core', index: i };
+        interactionPromptEl.innerText = 'PRESS [E] TO ABSORB CORE';
+        interactionPromptEl.style.display = 'block';
+        return;
+      }
+    }
+  }
+
+  // Check exit door if all cores are collected
+  if(exitDoorMesh && collectedCores >= totalCores){
+    const dist = camera.position.distanceTo(exitDoorMesh.position);
+    if(dist < 3.0){
+      activeInteractable = { type: 'exit' };
+      interactionPromptEl.innerText = 'PRESS [E] TO ENTER EXIT';
+      interactionPromptEl.style.display = 'block';
+      return;
+    }
+  }
+}
+
+document.addEventListener('keydown', e=>{
+  if(e.code === 'KeyE' && gameStarted && !gamePaused && !gameEnded && activeInteractable){
+    if(activeInteractable.type === 'core'){
+      const core = coreObjects[activeInteractable.index];
+      core.collected = true;
+      scene.remove(core.mesh);
+      collectedCores++;
+      updateObjectivesUI();
+      interactionPromptEl.style.display = 'none';
+      if(collectedCores >= totalCores && exitDoorMesh){
+        exitDoorMesh.material = unlockedDoorMat;
+        showAlert('All cores gathered. The exit has unlocked!');
+      }
+    } else if(activeInteractable.type === 'exit'){
+      triggerEnding();
+    }
+  }
+});
 
 /* =========================================================================
    UI & GAME STATES
@@ -908,7 +1021,7 @@ function closePauseMenu(){
 document.getElementById('btn-resume').addEventListener('click', closePauseMenu);
 
 document.getElementById('btn-save').addEventListener('click', ()=>{
-  const saveData = { x: camera.position.x, y: camera.position.y, z: camera.position.z, yaw: yaw, pitch: pitch };
+  const saveData = { x: camera.position.x, y: camera.position.y, z: camera.position.z, yaw: yaw, pitch: pitch, collectedCores: collectedCores };
   localStorage.setItem('backsite_save', JSON.stringify(saveData));
   showAlert('Game Saved Successfully.');
 });
@@ -994,6 +1107,7 @@ document.getElementById('btn-load-game').addEventListener('click', ()=>{
     crosshairEl.style.display = 'block';
     camera.position.set(data.x, data.y, data.z);
     yaw = data.yaw; pitch = data.pitch;
+    if(data.collectedCores !== undefined) collectedCores = data.collectedCores;
     document.body.classList.add('cursor-hidden');
     requestLook();
     startSequence();
@@ -1024,7 +1138,7 @@ function triggerEnding(){
   }, 500);
 }
 
-document.getElementById('btn-again').addEventListener('click', (_,)=>{
+document.getElementById('btn-again').addEventListener('click', ()=>{
   endingEl.style.display = 'none';
   gameEnded = false;
   buildLevel();
@@ -1040,19 +1154,16 @@ document.getElementById('btn-again').addEventListener('click', (_,)=>{
 });
 
 /* =========================================================================
-   DREAD SEQUENCE: ~38s explore (with weird events) -> flicker+chase ->
-   12s chaos -> glitch escape.  Total runtime ~50s.
+   DREAD SEQUENCE & HOVER ANIMATION FOR CORES
    ========================================================================= */
-const EXPLORE_DURATION = 38;   // seconds of calm-but-wrong exploring
-const CHASE_DURATION = 12;     // seconds of chaos once chase begins
+const EXPLORE_DURATION = 38;
+const CHASE_DURATION = 12;
 let sequenceTimer = 0;
-let sequencePhase = 'idle';    // idle | explore | chase | glitching
+let sequencePhase = 'idle';
 const glitchOverlay = document.getElementById('glitch-overlay');
 const chaseAudioEl = document.getElementById('chase-audio');
 let flashlightBaseIntensity = flashlight.intensity;
 
-/* ---- fleeting shadow figure: a dark silhouette that appears down a
-   hallway for a moment, then is simply gone ---- */
 const shadowFigure = new THREE.Group();
 const shadowMat = new THREE.MeshBasicMaterial({ color:0x000000, transparent:true, opacity:0.95 });
 const shadowBody = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.5, 2.0, 8), shadowMat);
@@ -1113,7 +1224,6 @@ function lightStutter(){
   }, 70);
 }
 
-/* Random schedule of "weird stuff" events across the explore phase */
 let weirdEventTimes = [];
 function scheduleWeirdEvents(){
   weirdEventTimes = [];
@@ -1188,7 +1298,6 @@ function updateSequence(dt){
   }
 
   if(sequencePhase === 'chase'){
-    // violent flicker: flashlight stutters wildly, red banner pulses
     const flicker = Math.random();
     flashlight.intensity = flicker > 0.75 ? 0 : flashlightBaseIntensity * (0.3 + Math.random()*1.4);
     scene.fog.density = gameSettings.fogDensity * (1.4 + Math.random()*0.8);
@@ -1205,6 +1314,15 @@ function animate(){
   requestAnimationFrame(animate);
   const dt = Math.min(clock.getDelta(), 0.033);
   t += dt;
+
+  // Animate floating uncollected cores
+  coreObjects.forEach(c => {
+    if(!c.collected){
+      c.mesh.rotation.y += dt * 1.5;
+      c.mesh.position.y = 1.5 + Math.sin(t * 3 + c.gx) * 0.15;
+    }
+  });
+
   if(gameStarted && !gamePaused && !gameEnded){
     updatePlayer(dt);
     updateSequence(dt);
