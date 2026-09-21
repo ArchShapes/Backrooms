@@ -100,27 +100,27 @@
 
   .menu-link:hover::after { width:100%; }
 
-  #settings-menu h2 { font-size:2em; margin-bottom:1.2em; color:#e63935; }
+  #settings-menu h2 { font-size:2em; margin-bottom:1.2em; color:#ddd; }
 
   /* ---- settings panel layout ---- */
   .setting-row {
     display: flex; align-items: center; justify-content: space-between;
     width: 340px; margin: 0.8em 0; font-size: 0.85em; letter-spacing: 0.1em;
   }
-  .setting-row label { color: #a8a085; }
+  .setting-row label { color: #aaa; }
   .setting-row input[type="range"] {
-    accent-color: #c9c2a3; cursor: pointer; width: 150px;
+    accent-color: #aaa; cursor: pointer; width: 150px;
   }
   .setting-row select {
-    background: #111; color: #c9c2a3; border: 1px solid #4a4530; padding: 4px 8px;
+    background: #111; color: #aaa; border: 1px solid #444; padding: 4px 8px;
     font-family: inherit; font-size: 0.85em; cursor: pointer; width: 150px;
   }
 
   .menu-btn-back {
     font-family: inherit;
-    background: rgba(20, 5, 5, 0.6);
-    border: 1px solid #5a1c1c;
-    color: #d1c7b7;
+    background: rgba(20, 20, 20, 0.6);
+    border: 1px solid #444;
+    color: #ccc;
     padding: 0.8em 2.5em;
     margin-top: 2em;
     letter-spacing: 0.25em;
@@ -129,82 +129,82 @@
     transition: all 0.3s ease;
   }
   .menu-btn-back:hover {
-    background: #c9302c;
+    background: #333;
     color: #ffffff;
-    border-color: #ff4d4a;
-    box-shadow: 0 0 20px rgba(201,48,44,0.8);
+    border-color: #888;
+    box-shadow: none;
   }
 
   /* ---- pause menu ---- */
   #pause-menu {
     position:fixed; inset:0; z-index:150; display:none;
     align-items:center; justify-content:center; flex-direction:column;
-    background:rgba(1,0,0,0.9); color:#8f887a; text-align:center;
+    background:rgba(2,2,2,0.95); color:#aaa; text-align:center;
   }
   #pause-menu h2 {
-    font-size:1.8em; letter-spacing:0.4em; font-weight:400; color:#c9302c;
-    margin-bottom:1.6em; text-shadow:0 0 14px rgba(179,20,20,0.4);
+    font-size:1.8em; letter-spacing:0.4em; font-weight:400; color:#ddd;
+    margin-bottom:1.6em; text-shadow:none;
   }
   #pause-menu button {
-    font-family:inherit; background:transparent; border:1px solid #3a2020; color:#8f887a;
+    font-family:inherit; background:transparent; border:1px solid #333; color:#aaa;
     padding:0.7em 2.4em; margin:0.4em; letter-spacing:0.2em; font-size:0.85em;
     cursor:pointer; transition:background 0.2s, color 0.2s; width: 240px;
   }
-  #pause-menu button:hover { background:#7a1414; color:#eee; border-color:#c9302c; }
+  #pause-menu button:hover { background:#222; color:#eee; border-color:#777; }
 
   /* ---- custom notification / alert modal ---- */
   #custom-alert {
     position:fixed; inset:0; z-index:250; display:none;
     align-items:center; justify-content:center; flex-direction:column;
-    background:rgba(0,0,0,0.85); color:#c9c2a3; text-align:center;
+    background:rgba(0,0,0,0.85); color:#ccc; text-align:center;
   }
   #custom-alert .alert-box {
-    background: #0d0c08; border: 1px solid #4a4530; padding: 24px 32px;
-    max-width: 360px; box-shadow: 0 0 20px rgba(0,0,0,0.9);
+    background: #0d0d0d; border: 1px solid #333; padding: 24px 32px;
+    max-width: 360px; box-shadow: none;
   }
-  #custom-alert p { letter-spacing:0.15em; font-size:0.9em; margin-bottom:1.8em; color:#e8dfb8; line-height:1.6em; }
+  #custom-alert p { letter-spacing:0.15em; font-size:0.9em; margin-bottom:1.8em; color:#ddd; line-height:1.6em; }
   #custom-alert button {
-    font-family:inherit; background:transparent; border:1px solid #4a4530; color:#c9c2a3;
+    font-family:inherit; background:transparent; border:1px solid #444; color:#ccc;
     padding:0.6em 2.2em; letter-spacing:0.2em; font-size:0.8em; cursor:pointer;
     transition:background 0.2s, color 0.2s;
   }
-  #custom-alert button:hover { background:#c9c2a3; color:#100e08; }
+  #custom-alert button:hover { background:#eee; color:#111; }
 
   /* ---- confirm modal ---- */
   #confirm-modal {
     position:fixed; inset:0; z-index:200; display:none;
     align-items:center; justify-content:center; flex-direction:column;
-    background:rgba(0,0,0,0.85); color:#c9c2a3; text-align:center;
+    background:rgba(0,0,0,0.85); color:#ccc; text-align:center;
   }
-  #confirm-modal p { letter-spacing:0.15em; font-size:1em; margin-bottom:1.5em; color:#e8dfb8; }
+  #confirm-modal p { letter-spacing:0.15em; font-size:1em; margin-bottom:1.5em; color:#ddd; }
   #confirm-modal .modal-btns { display:flex; gap:10px; }
   #confirm-modal button {
-    font-family:inherit; background:transparent; border:1px solid #4a4530; color:#c9c2a3;
+    font-family:inherit; background:transparent; border:1px solid #444; color:#ccc;
     padding:0.6em 2em; letter-spacing:0.2em; font-size:0.8em; cursor:pointer;
     transition:background 0.2s, color 0.2s;
   }
-  #confirm-modal button:hover { background:#c9c2a3; color:#100e08; }
+  #confirm-modal button:hover { background:#eee; color:#111; }
 
   /* ---- objectives box (top left) ---- */
   #objectives-box {
     position: fixed; top: 16px; left: 16px; z-index: 16;
-    background: rgba(8, 3, 3, 0.75); border: 1px solid #3a1c1c;
-    padding: 12px 16px; color: #a89c8a; max-width: 280px;
+    background: rgba(10, 10, 10, 0.85); border: 1px solid #333;
+    padding: 12px 16px; color: #aaa; max-width: 280px;
     display: none; pointer-events: none;
-    box-shadow: 0 0 10px rgba(0,0,0,0.8);
+    box-shadow: none;
   }
   #objectives-box h3 {
-    font-size: 0.75em; letter-spacing: 0.2em; color: #c9302c; margin-bottom: 6px;
-    border-bottom: 1px solid #3a1c1c; padding-bottom: 4px;
+    font-size: 0.75em; letter-spacing: 0.2em; color: #ddd; margin-bottom: 6px;
+    border-bottom: 1px solid #333; padding-bottom: 4px;
   }
   #objectives-box ul { list-style: none; font-size: 0.7em; letter-spacing: 0.1em; line-height: 1.6em; }
-  #objectives-box li.completed { text-decoration: line-through; color: #6a624a; }
+  #objectives-box li.completed { text-decoration: line-through; color: #555; }
 
   /* ---- interaction prompt (center screen) ---- */
   #interaction-prompt {
     position: fixed; top: 56%; left: 50%; transform: translate(-50%, -50%);
-    z-index: 16; color: #e8dfb8; font-size: 0.8em; letter-spacing: 0.15em;
-    background: rgba(10, 9, 6, 0.8); padding: 6px 12px; border: 1px solid #4a4530;
+    z-index: 16; color: #ddd; font-size: 0.8em; letter-spacing: 0.15em;
+    background: rgba(12, 12, 12, 0.9); padding: 6px 12px; border: 1px solid #333;
     display: none; pointer-events: none;
   }
 
@@ -218,19 +218,19 @@
   #ending-screen {
     position:fixed; inset:0; z-index:160; display:none;
     align-items:center; justify-content:center; flex-direction:column;
-    background:#000; color:#cfc7a4; text-align:center;
+    background:#000; color:#ccc; text-align:center;
   }
   #ending-screen h2 {
-    font-size:2.2em; letter-spacing:0.35em; font-weight:400; color:#c9302c;
-    margin-bottom:0.6em; text-shadow:0 0 20px rgba(201,48,44,0.5);
+    font-size:2.2em; letter-spacing:0.35em; font-weight:400; color:#eee;
+    margin-bottom:0.6em; text-shadow:none;
   }
-  #ending-screen p { letter-spacing:0.15em; font-size:0.9em; color:#8a8265; max-width:520px; line-height:1.9em; margin-bottom:2em; }
+  #ending-screen p { letter-spacing:0.15em; font-size:0.9em; color:#888; max-width:520px; line-height:1.9em; margin-bottom:2em; }
   #ending-screen button {
-    font-family:inherit; background:transparent; border:1px solid #4a4530; color:#c9c2a3;
+    font-family:inherit; background:transparent; border:1px solid #444; color:#ccc;
     padding:0.8em 2.6em; letter-spacing:0.2em; font-size:0.85em; cursor:pointer;
     transition:background 0.2s, color 0.2s;
   }
-  #ending-screen button:hover { background:#c9c2a3; color:#100e08; }
+  #ending-screen button:hover { background:#eee; color:#111; }
 
 
   #loading-screen {
@@ -241,7 +241,7 @@
   }
 
   #pause-hint {
-    position:fixed; bottom:14px; left:14px; z-index:16; color:rgba(200,190,160,0.35);
+    position:fixed; bottom:14px; left:14px; z-index:16; color:rgba(200,200,200,0.35);
     font-size:0.7em; letter-spacing:0.15em; display:none;
   }
 </style>
@@ -258,7 +258,7 @@
       <button class="menu-link" id="btn-load-game">Load Game</button>
       <button class="menu-link" id="btn-menu-settings">Settings</button>
     </div>
-    <div class="menu-footer" style="font-size: 0.75em; color: #735757; letter-spacing: 0.15em; margin-top: 3em; line-height: 1.6em;">
+    <div class="menu-footer" style="font-size: 0.75em; color: #555; letter-spacing: 0.15em; margin-top: 3em; line-height: 1.6em;">
       WASD / ARROWS — walk &nbsp;&nbsp;·&nbsp;&nbsp; MOUSE — look &nbsp;&nbsp;·&nbsp;&nbsp; SHIFT — run<br>
       E — collect core / flash
     </div>
@@ -348,9 +348,6 @@
 (function(){
 "use strict";
 
-/* =========================================================================
-   SETTINGS STATE & CUSTOM POPUP HELPER
-   ========================================================================= */
 let gameSettings = {
   volume: 0.5,
   sensitivity: 0.00384,
@@ -394,9 +391,6 @@ fogSelect.addEventListener('change', (e)=>{
   if(scene.fog) scene.fog.density = gameSettings.fogDensity;
 });
 
-/* =========================================================================
-   AUDIO ENGINE & RANDOM AMBIENT TRACKS
-   ========================================================================= */
 let actx = null;
 let masterAudioGain = null;
 
@@ -474,30 +468,27 @@ function scheduleNextAmbient(){
       if (track) {
         track.currentTime = 0;
         track.volume = gameSettings.volume * 0.7;
-        track.play().catch(e => console.log("Audio play blocked/missing file:", e));
+        track.play().catch(e => console.log("Audio playback error:", e));
       }
     }
     scheduleNextAmbient();
   }, delay);
 }
 
-/* =========================================================================
-   ULTRA-HD PROCEDURAL TEXTURES & MAZE GENERATION
-   ========================================================================= */
 function makeCanvas(w,h){ const c=document.createElement('canvas'); c.width=w; c.height=h; return c; }
 
 function wallTexture(){
   const c = makeCanvas(4096,4096), ctx = c.getContext('2d');
-  ctx.fillStyle = '#151009'; ctx.fillRect(0,0,4096,4096);
+  ctx.fillStyle = '#101010'; ctx.fillRect(0,0,4096,4096);
   
-  ctx.fillStyle = 'rgba(5,3,2,0.6)';
+  ctx.fillStyle = 'rgba(20,20,20,0.6)';
   for(let x=0; x<4096; x+=256){ 
     ctx.fillRect(x, 0, 128, 4096); 
   }
   
   for(let i=0; i<12000; i++){
     const x = Math.random()*4096, y = Math.random()*4096, r = Math.random()*20 + 2;
-    ctx.fillStyle = `rgba(8,5,3,${Math.random()*0.35})`;
+    ctx.fillStyle = `rgba(30,30,30,${Math.random()*0.35})`;
     ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
   }
 
@@ -505,13 +496,13 @@ function wallTexture(){
     const x = Math.random()*4096, y = Math.random()*1200;
     const h = 400 + Math.random()*2200, w = 3 + Math.random()*10;
     const grad = ctx.createLinearGradient(x, y, x, y+h);
-    grad.addColorStop(0, 'rgba(60,10,8,0.35)');
-    grad.addColorStop(1, 'rgba(60,10,8,0)');
+    grad.addColorStop(0, 'rgba(50,50,50,0.25)');
+    grad.addColorStop(1, 'rgba(50,50,50,0)');
     ctx.fillStyle = grad;
     ctx.fillRect(x, y, w, h);
   }
 
-  ctx.strokeStyle = 'rgba(30,5,5,0.4)';
+  ctx.strokeStyle = 'rgba(40,40,40,0.4)';
   for(let i=0;i<60;i++){
     const x = Math.random()*4096, y = Math.random()*4096;
     ctx.lineWidth = 1+Math.random()*2;
@@ -541,17 +532,18 @@ function wallBumpTexture(){
 
 function floorTexture(){
   const c = makeCanvas(4096,4096), ctx = c.getContext('2d');
-  ctx.fillStyle = '#0e0b06'; ctx.fillRect(0,0,4096,4096);
+  ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0,0,4096,4096);
   
   for(let i=0; i<120000; i++){
     const x = Math.random()*4096, y = Math.random()*4096;
-    ctx.fillStyle = `rgba(${30+Math.random()*30|0},${22+Math.random()*18|0},${10+Math.random()*12|0},${Math.random()*0.6})`;
+    const shade = 20 + Math.random()*30|0;
+    ctx.fillStyle = `rgba(${shade},${shade},${shade},${Math.random()*0.6})`;
     ctx.fillRect(x, y, 4, 4);
   }
 
   for(let i=0;i<80;i++){
     const x=Math.random()*4096, y=Math.random()*4096, r=20+Math.random()*90;
-    ctx.fillStyle = `rgba(20,3,3,${0.08+Math.random()*0.15})`;
+    ctx.fillStyle = `rgba(40,40,40,${0.08+Math.random()*0.15})`;
     ctx.beginPath(); ctx.ellipse(x,y,r,r*0.6,Math.random()*6,0,7); ctx.fill();
   }
 
@@ -563,9 +555,9 @@ function floorTexture(){
 
 function ceilTexture(){
   const c = makeCanvas(4096,4096), ctx = c.getContext('2d');
-  ctx.fillStyle = '#100c07'; ctx.fillRect(0,0,4096,4096);
+  ctx.fillStyle = '#0d0d0d'; ctx.fillRect(0,0,4096,4096);
   
-  ctx.strokeStyle = 'rgba(4, 2, 2, 0.75)';
+  ctx.strokeStyle = 'rgba(25, 25, 25, 0.75)';
   ctx.lineWidth = 6;
   for(let i=0; i<=4096; i+=256){
     ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 4096); ctx.stroke();
@@ -655,9 +647,6 @@ function genMaze(){
   }
 }
 
-/* =========================================================================
-   SCENE SETUP WITH HIGH-END GRAPHICS
-   ========================================================================= */
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -668,7 +657,7 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
 
 const scene = new THREE.Scene();
-const fogColor = 0x0a0605;
+const fogColor = 0x080808;
 scene.background = new THREE.Color(0x000000);
 scene.fog = new THREE.FogExp2(fogColor, gameSettings.fogDensity);
 
@@ -682,11 +671,11 @@ window.addEventListener('resize', ()=>{
   resizePost();
 });
 
-scene.add(new THREE.HemisphereLight(0x0d0806, 0x010000, 0.08));
-scene.add(new THREE.AmbientLight(0x06040300, 0.05));
+scene.add(new THREE.HemisphereLight(0x222222, 0x050505, 0.08));
+scene.add(new THREE.AmbientLight(0x101010, 0.05));
 scene.add(camera);
 
-const flashlight = new THREE.SpotLight(0xffe8c8, 3.2, 28, Math.PI/5, 0.4, 1.4);
+const flashlight = new THREE.SpotLight(0xffffff, 3.2, 28, Math.PI/5, 0.4, 1.4);
 flashlight.position.set(0.25, -0.15, 0.1);
 flashlight.castShadow = true;
 flashlight.shadow.mapSize.width = 2048;
@@ -739,9 +728,6 @@ let wallMeshes = [];
 const levelGroup = new THREE.Group();
 scene.add(levelGroup);
 
-/* =========================================================================
-   COLLECTIBLES STATE (CLOSE TO SPAWN)
-   ========================================================================= */
 const TOTAL_COLLECTIBLES = 5;
 let collectedCount = 0;
 let collectibleMeshes = [];
@@ -761,8 +747,6 @@ function spawnCollectiblesAndDoor(){
 
   collectedCount = 0;
 
-  // Keep cores well away from the starting cell.
-  // Use a distance ring so they spawn farther into the level.
   const candidateCells = [];
   for(let x=0; x<GRID; x++){
     for(let z=0; z<GRID; z++){
@@ -773,7 +757,6 @@ function spawnCollectiblesAndDoor(){
     }
   }
 
-  // Randomize the eligible cells so the cores do not form an obvious pattern.
   for(let i=candidateCells.length-1; i>0; i--){
     const j = Math.floor(Math.random() * (i + 1));
     [candidateCells[i], candidateCells[j]] = [candidateCells[j], candidateCells[i]];
@@ -782,8 +765,8 @@ function spawnCollectiblesAndDoor(){
   const coreGroupTemplate = new THREE.Group();
   const innerGeo = new THREE.IcosahedronGeometry(0.35, 0);
   const innerMat = new THREE.MeshStandardMaterial({ 
-    color: 0xff3333, 
-    emissive: 0xaa1111, 
+    color: 0xcccccc, 
+    emissive: 0x444444, 
     roughness: 0.2, 
     metalness: 0.8 
   });
@@ -792,15 +775,15 @@ function spawnCollectiblesAndDoor(){
 
   const outerGeo = new THREE.IcosahedronGeometry(0.55, 1);
   const outerMat = new THREE.MeshBasicMaterial({ 
-    color: 0xff6666, 
+    color: 0xffffff, 
     wireframe: true, 
     transparent: true, 
-    opacity: 0.4 
+    opacity: 0.3 
   });
   const outerMesh = new THREE.Mesh(outerGeo, outerMat);
   coreGroupTemplate.add(outerMesh);
 
-  const coreLight = new THREE.PointLight(0xff3333, 1.2, 4);
+  const coreLight = new THREE.PointLight(0xffffff, 0.8, 4);
   coreLight.position.set(0, 0, 0);
   coreGroupTemplate.add(coreLight);
 
@@ -846,9 +829,6 @@ function buildLevel(){
 }
 buildLevel();
 
-/* =========================================================================
-   HIGH-END POST-PROCESSING (BLOOM, VIGNETTE, FILM GRAIN)
-   ========================================================================= */
 let renderTarget = new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
   minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat
 });
@@ -903,9 +883,6 @@ function resizePost(){
 }
 resizePost();
 
-/* =========================================================================
-   CONTROLS & PLAYER
-   ========================================================================= */
 const startCell = {x:0, z:0};
 camera.position.set(startCell.x*CELL, EYE_HEIGHT, startCell.z*CELL);
 let yaw = Math.PI*0.25, pitch = 0;
@@ -991,9 +968,6 @@ function updatePlayer(dt){
   }
 }
 
-/* =========================================================================
-   UI & GAME STATES
-   ========================================================================= */
 const mainMenuEl = document.getElementById('main-menu');
 const settingsMenuEl = document.getElementById('settings-menu');
 const pauseMenuEl = document.getElementById('pause-menu');
@@ -1149,9 +1123,6 @@ document.getElementById('btn-load-game').addEventListener('click', ()=>{
   } catch(e) { showAlert('Failed to load save data.'); }
 });
 
-/* =========================================================================
-   INTERACTION LOGIC (COLLECTING CORES WITH E & FLASHING ON LAST CORE)
-   ========================================================================= */
 document.addEventListener('keydown', e => {
   if((e.code === 'KeyE' || e.key === 'e' || e.key === 'E') && gameStarted && !gamePaused && !gameEnded){
     for(let i=0; i<collectibleMeshes.length; i++){
@@ -1162,12 +1133,10 @@ document.addEventListener('keydown', e => {
         collectedCount++;
         updateObjectivesUI();
 
-        // Flash screen effect on collection
         const flashEl = document.getElementById('flash');
         flashEl.style.opacity = 0.7;
         setTimeout(()=>{ flashEl.style.opacity = 0; }, 200);
 
-        // If all collected, trigger ending sequence
         if(collectedCount >= TOTAL_COLLECTIBLES){
           triggerEnding();
         }
@@ -1197,9 +1166,6 @@ function updateInteractions(){
   }
 }
 
-/* =========================================================================
-   ENDING & LOOP
-   ========================================================================= */
 const endingEl = document.getElementById('ending-screen');
 const clock = new THREE.Clock();
 let t = 0;
